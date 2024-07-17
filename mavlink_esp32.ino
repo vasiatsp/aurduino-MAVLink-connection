@@ -118,18 +118,7 @@ void Mav_Request_Data()
 
     
   for (int i=0; i < maxStreams; i++) {
-    /*
-     * mavlink_msg_request_data_stream_pack(system_id, component_id, 
-     *    &msg, 
-     *    target_system, target_component, 
-     *    MAV_DATA_STREAM_POSITION, 10000000, 1);
-     *    
-     * mavlink_msg_request_data_stream_pack(uint8_t system_id, uint8_t component_id, 
-     *    mavlink_message_t* msg,
-     *    uint8_t target_system, uint8_t target_component, uint8_t req_stream_id, 
-     *    uint16_t req_message_rate, uint8_t start_stop)
-     * 
-     */
+  
     mavlink_msg_request_data_stream_pack(2, 200, &msg, 1, 0, MAVStreams[i], MAVRates[i], 1);
     uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
     Serial.write(buf,len);
@@ -138,31 +127,6 @@ void Mav_Request_Data()
 
   }
   
-  // Request: PARAM_REQUEST_LIST. Only for full log recording
-  /*
-   * Primitive: mavlink_msg_param_request_list_pack(uint8_t system_id, uint8_t component_id, mavlink_message_t* msg,
-                   uint8_t target_system, uint8_t target_component)
-   */
-/*
-  // Configure
-  uint8_t system_id=2;
-  uint8_t component_id=200;
-  // mavlink_message_t* msg;
-  uint8_t target_system=1;
-  uint8_t target_component=0;
-
-  // Pack
-  mavlink_msg_param_request_list_pack(system_id, component_id, &msg,
-    target_system, target_component);
-  uint16_t len = mavlink_msg_to_send_buffer(buf, &msg);
-
-  // Send
-#ifdef SOFT_SERIAL_DEBUGGING
-    pxSerial.write(buf,len);
-#else
-    Serial.write(buf, len);
-#endif
-*/
 }
 
 
@@ -173,8 +137,8 @@ void comm_receive() {
   mavlink_status_t status;
   
 
-  Serial.println("---Start---");
-  delay(500);
+  // Serial.println("---Start---");
+  // delay(500);
 
 
   while(mySerial.available()>0) {
@@ -194,7 +158,7 @@ void comm_receive() {
             Serial.println("PX HB");
 
           }
-          break;
+         
 
         case MAVLINK_MSG_ID_SYS_STATUS:  // #1: SYS_STATUS
           {
@@ -213,16 +177,15 @@ void comm_receive() {
             Serial.print("], [Comms loss (%): ");
             Serial.print(sys_status.drop_rate_comm);
             Serial.println("]");
-
+            Serial.print("[Batt remaining: ");
+            Serial.print(sys_status.battery_remaining); 
+            Serial.println("]");
           }
-          break;
+        
 
         case MAVLINK_MSG_ID_PARAM_VALUE:  // #22: PARAM_VALUE
           {
-            /* Message decoding: PRIMITIVE
-             *    mavlink_msg_param_value_decode(const mavlink_message_t* msg, mavlink_param_value_t* param_value)
-             */
-            //mavlink_message_t* msg;
+          
             mavlink_param_value_t param_value;
             mavlink_msg_param_value_decode(&msg, &param_value);
 
@@ -235,7 +198,7 @@ void comm_receive() {
             Serial.println("------ Fin -------");
 
           }
-          break;
+       
 
         case MAVLINK_MSG_ID_RAW_IMU:  // #27: RAW_IMU
           {
@@ -249,7 +212,7 @@ void comm_receive() {
             Serial.println(raw_imu.xacc);
 
           }
-          break;
+         
 
         case MAVLINK_MSG_ID_ATTITUDE:  // #30
           {
@@ -261,15 +224,22 @@ void comm_receive() {
 
             Serial.println("PX ATTITUDE");
             Serial.println(attitude.roll);
-
-
           }
-          break;
-
         
+        
+          
+        case  MAVLINK_MSG_ID_DISTANCE_SENSOR_LEN:
+          {
+            mavlink_distance_sensor_t sys_status;
+            mavlink_msg_distance_sensor_decode(&msg, &sys_status);
+
+            Serial.print("[Dist: ");
+            Serial.print(sys_status.current_distance); 
+            Serial.println("]");
+          }
        default:
 
-          Serial.print("--- Otros: ");
+          Serial.print("--- Others: ");
           Serial.print("[ID: ");
           Serial.print(msg.msgid);
           Serial.print("], [seq: ");
